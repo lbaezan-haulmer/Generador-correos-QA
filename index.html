@@ -123,6 +123,11 @@ textarea{resize:vertical;min-height:60px}
       <span>Total diferidos: <strong id="tot-dif">0</strong></span>
     </div>
 
+    <div style="margin-top:14px; display:flex; justify-content:space-between; align-items:center; background: var(--color-background-secondary); padding: 8px 10px; border-radius: var(--border-radius-md); border: 1px solid var(--color-border-tertiary);">
+      <label style="margin:0; font-weight:500;">Oportunidades de mejora (Obs.)</label>
+      <input id="mejoras" type="number" min="0" value="0" style="width:70px; text-align:center; padding:4px;" oninput="live()">
+    </div>
+
     <hr class="section-sep" id="motivo-sep" style="display:none">
     <div id="motivo-block" style="display:none">
       <h2>Motivo del rechazo</h2>
@@ -308,6 +313,7 @@ function buildEmailHTML(chartDataUrl){
   const totalEjec=aprob+obs+fallo;
   const totalAprob=aprob+obs;
   const r=getIssueCounts();
+  const mejoras=num('mejoras');
   const rechazado=estado==='Rechazado';
 
   const hupLink='<a href="'+hupUrl+'" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold;">'+hupId+'</a> '+hupName;
@@ -321,6 +327,7 @@ function buildEmailHTML(chartDataUrl){
 '<li '+liStyle+'>Casos fallidos: '+fallo+'</li>'+
 '<li '+liStyle+'>Total de issues reportados: '+r.totRep+'</li>'+
 '<li '+liStyle+'>Total de issues diferidos: '+r.totDif+'</li>'+
+'<li '+liStyle+'>Oportunidades de mejora: '+mejoras+'</li>'+
 '</ul>';
 
   const chartImg=chartDataUrl
@@ -345,7 +352,7 @@ function buildEmailHTML(chartDataUrl){
 
   const estadoLine='Luego de ejecutar el plan de pruebas definido, se informa que la certificación QA finalizó en estado '+estadoChipHTML()+'.';
 
-  const showDefects = num('fallo') > 0 || r.totRep > 0;
+  const showDefects = num('fallo') > 0 || r.totRep > 0 || mejoras > 0;
 
   let evidencia='<p '+pStyle+'><strong>Evidencia y detalle:</strong></p>'+
 '<ul '+ulStyle+'>'+
@@ -442,7 +449,7 @@ function live(){
   document.getElementById('tot-rep').textContent=r.totRep;
   document.getElementById('tot-dif').textContent=r.totDif;
   
-  const showDefects = num('fallo') > 0 || r.totRep > 0;
+  const showDefects = num('fallo') > 0 || r.totRep > 0 || num('mejoras') > 0;
   document.getElementById('defect-block').style.display = showDefects ? 'block' : 'none';
 
   lastChartDataUrl=drawChartSync();
