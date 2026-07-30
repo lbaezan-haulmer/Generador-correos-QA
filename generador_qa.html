@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de correos QA - Certificación</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f7f7f5;
+  --color-border-tertiary:#e8e8e4;
+  --color-border-secondary:#d8d8d2;
+  --color-text-primary:#1a1a18;
+  --color-text-secondary:#5a5a54;
+  --color-text-tertiary:#9a9a92;
+  --border-radius-md:8px;
+  --border-radius-lg:14px;
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-sans);background:#eeeeec;padding:16px;color:var(--color-text-primary)}
+.container{max-width:1200px;margin:0 auto}
+
+.header{text-align:center;margin-bottom:8px}
+.header h1{font-size:20px;font-weight:600}
+.header p{font-size:13px;color:var(--color-text-secondary);margin-top:4px}
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;padding:1rem 0}
+@media(max-width:700px){.wrap{grid-template-columns:1fr}}
+.panel{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.panel h2{font-size:13px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:.04em;margin-bottom:1rem}
+
+label{display:block;font-size:13px;color:var(--color-text-secondary);margin-bottom:4px;margin-top:12px}
+label:first-of-type{margin-top:0}
+input,select,textarea{width:100%;font-size:13px;padding:7px 10px;border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary);font-family:var(--font-sans)}
+textarea{resize:vertical;min-height:60px}
+.gen-btn{width:100%;margin-top:16px;padding:10px;font-size:14px;font-weight:500;cursor:pointer;border-radius:var(--border-radius-md);background:var(--color-background-primary);border:1px solid var(--color-border-secondary);color:var(--color-text-primary);transition:all 0.2s}
+.gen-btn:hover{background:var(--color-background-secondary)}
+.copy-btn{font-size:12px;padding:5px 14px;cursor:pointer;border-radius:var(--border-radius-md);background:var(--color-background-primary);border:1px solid var(--color-border-secondary);color:var(--color-text-primary);float:right;transition:all 0.2s}
+.copy-btn:hover{background:var(--color-background-secondary)}
+
+.section-sep{border:none;border-top:1px solid var(--color-border-tertiary);margin:14px 0}
+.status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.two-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.estado-chips{display:flex;gap:8px;flex-wrap:wrap}
+.estado-chip{font-size:12px;padding:6px 14px;cursor:pointer;border-radius:999px;border:1.5px solid transparent;background:var(--color-background-secondary);color:var(--color-text-secondary);font-weight:500;transition:all 0.2s}
+.estado-chip.sel-aprob{background:#EAF3DE;color:#2E5A0C;border-color:#4CAF7D}
+.estado-chip.sel-obs{background:#FBF0DA;color:#7A4A08;border-color:#EF9F27}
+.estado-chip.sel-rech{background:#FCEBEB;color:#8F2323;border-color:#E24B4A}
+
+.issue-table{width:100%;border-collapse:collapse}
+.issue-table th{font-size:11px;font-weight:500;color:var(--color-text-tertiary);text-align:center;padding:2px 4px}
+.issue-table th:first-child{text-align:left}
+.issue-table td{padding:3px 4px}
+.issue-table input{text-align:center;padding:5px}
+.crit-chip{display:inline-block;color:#fff;font-size:11px;font-weight:500;padding:2px 9px;border-radius:3px}
+.totals-row{display:flex;justify-content:space-between;font-size:12px;color:var(--color-text-secondary);margin-top:8px;padding-top:8px;border-top:1px dashed var(--color-border-tertiary)}
+
+.preview-wrap{background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:1.25rem;font-size:13px;line-height:1.7;color:var(--color-text-primary);min-height:200px;overflow-x:auto}
+.preview-wrap a{color:#1a73e8;text-decoration:underline}
+.preview-wrap p{margin-bottom:.9em}
+.preview-wrap ul{margin:0 0 .9em 1.2em}
+.preview-wrap li{margin-bottom:2px}
+</style>
+</head>
+<body>
+<div class="container">
+<div class="header">
+  <h1>Generador de correos QA — Certificación</h1>
+  <p>Completa los datos y copia el correo listo para pegar en Gmail</p>
+</div>
+<div class="wrap">
+  <div class="panel">
+    <h2>Datos de la certificación</h2>
+    <label>Vertical / Línea de desarrollo</label>
+    <select id="vertical" onchange="live()">
+      <option value="">— Selecciona —</option>
+      <option>Payments</option>
+      <option>Sales Onboarding &amp; Billing</option>
+      <option>Workspace</option>
+      <option>Mobile</option>
+      <option>DTE</option>
+      <option>Gastronomía</option>
+      <option>&amp;Co</option>
+    </select>
+
+    <div class="two-grid">
+      <div><label>ID de la HUP</label><input id="hup-id" placeholder="HUP-4068" oninput="live()"></div>
+      <div><label>N° de ciclo</label><input id="ciclo-num" type="number" min="1" value="1" oninput="live()"></div>
+    </div>
+
+    <label>Nombre de la HUP</label>
+    <input id="hup-name" placeholder="Ej: Landing Espacio de Trabajo" oninput="live()">
+
+    <label>URL de la HUP (Notion)</label>
+    <input id="hup-url" placeholder="https://notion.so/..." oninput="live()">
+
+    <hr class="section-sep">
+    <h2>Estado de certificación</h2>
+    <div class="estado-chips" id="estado-chips">
+      <span class="estado-chip" data-e="Aprobado" onclick="setEstado('Aprobado')">Aprobado</span>
+      <span class="estado-chip" data-e="Aprobado con Observaciones" onclick="setEstado('Aprobado con Observaciones')">Aprobado con Observaciones</span>
+      <span class="estado-chip" data-e="Rechazado" onclick="setEstado('Rechazado')">Rechazado</span>
+    </div>
+
+    <hr class="section-sep">
+    <h2>Casos ejecutados</h2>
+    <div class="status-grid">
+      <div><label>✓ Aprobados</label><input id="aprob" type="number" min="0" value="0" style="text-align:center" oninput="live()"></div>
+      <div><label>⚠ Aprob. c/obs.</label><input id="obs" type="number" min="0" value="0" style="text-align:center" oninput="live()"></div>
+      <div><label>✗ Fallidos</label><input id="fallo" type="number" min="0" value="0" style="text-align:center" oninput="live()"></div>
+    </div>
+    <p style="font-size:12px;color:var(--color-text-tertiary);margin-top:6px">Total ejecutados: <span id="total-lbl">0</span></p>
+
+    <hr class="section-sep">
+    <h2>Issues por criticidad</h2>
+    <table class="issue-table">
+      <thead><tr><th>Criticidad</th><th>Reportados</th><th>Diferidos</th></tr></thead>
+      <tbody id="issue-tbody"></tbody>
+    </table>
+    <div class="totals-row">
+      <span>Total reportados: <strong id="tot-rep">0</strong></span>
+      <span>Total diferidos: <strong id="tot-dif">0</strong></span>
+    </div>
+
+    <hr class="section-sep" id="motivo-sep" style="display:none">
+    <div id="motivo-block" style="display:none">
+      <h2>Motivo del rechazo</h2>
+      <textarea id="motivo" placeholder="Un motivo por línea. Ej:&#10;Defecto bloqueante en el flujo de pago&#10;Botón de confirmación no responde en mobile" oninput="live()"></textarea>
+    </div>
+
+    <hr class="section-sep">
+    <h2>Evidencia</h2>
+    <label>URL Plan de Pruebas (Notion)</label>
+    <input id="plan-url" placeholder="https://notion.so/..." oninput="live()">
+    
+    <div id="defect-block" style="display:none">
+      <label>URL Detalle de Defectos (Notion)</label>
+      <input id="defect-url" placeholder="https://notion.so/..." oninput="live()">
+    </div>
+
+    <button class="gen-btn" onclick="copyRich()">Copiar correo al portapapeles</button>
+  </div>
+
+  <div class="panel">
+    <h2>Preview del correo <button class="copy-btn" onclick="copyRich()">Copiar</button></h2>
+    <div id="preview-subject" style="font-size:12px;color:var(--color-text-secondary);margin-bottom:12px;font-weight:500"></div>
+    <div class="preview-wrap" id="preview">Completa el formulario...</div>
+  </div>
+</div>
+</div>
+
+<canvas id="chart-offscreen" width="600" height="600" style="display:none"></canvas>
+
+<script>
+let chartInst=null;
+let estado='Aprobado';
+let lastChartDataUrl=null;
+const CHART_SIZE=280;
+
+const ESTADO_COLORS={
+  'Aprobado':'#4CAF7D',
+  'Aprobado con Observaciones':'#EF9F27',
+  'Rechazado':'#E24B4A'
+};
+const CRIT_ORDER=['Bloqueante','Crítica','Alta','Media','Baja'];
+const CRIT_COLORS={'Bloqueante':'#7A0C0C','Crítica':'#E24B4A','Alta':'#EF9F27','Media':'#378ADD','Baja':'#4CAF7D'};
+
+function getGreeting(){
+  const h=new Date().getHours();
+  if(h>=6 && h<12) return 'Buenos días';
+  if(h>=12 && h<21) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
+// Nueva función: Asegura que las URLs siempre comiencen con http o https
+// Si no lo tienen, Gmail asume que es una ruta local y remueve el link.
+function formatUrl(url) {
+  const trimmedUrl = url.trim();
+  if (!trimmedUrl) return '#';
+  if (!/^https?:\/\//i.test(trimmedUrl) && trimmedUrl !== '#') {
+    return 'https://' + trimmedUrl;
+  }
+  return trimmedUrl;
+}
+
+function renderIssueTable(){
+  const tb=document.getElementById('issue-tbody');
+  tb.innerHTML=CRIT_ORDER.map(c=>
+    '<tr>'+
+      '<td><span class="crit-chip" style="background:'+CRIT_COLORS[c]+'">'+c+'</span></td>'+
+      '<td><input type="number" min="0" value="0" id="rep-'+c+'" oninput="live()"></td>'+
+      '<td><input type="number" min="0" value="0" id="dif-'+c+'" oninput="live()"></td>'+
+    '</tr>').join('');
+}
+
+function setEstado(e){
+  estado=e;
+  document.querySelectorAll('.estado-chip').forEach(c=>{
+    c.className='estado-chip';
+    if(c.dataset.e===e){
+      c.classList.add(e==='Aprobado'?'sel-aprob':e==='Rechazado'?'sel-rech':'sel-obs');
+    }
+  });
+  const show=e==='Rechazado';
+  document.getElementById('motivo-block').style.display=show?'block':'none';
+  document.getElementById('motivo-sep').style.display=show?'block':'none';
+  live();
+}
+
+function ordinal(n){
+  const o=['','Primer','Segundo','Tercer','Cuarto','Quinto','Sexto','Séptimo','Octavo'];
+  return (o[n]||n+'°')+' ciclo';
+}
+function val(id){return document.getElementById(id).value.trim();}
+function num(id){const el=document.getElementById(id);return el?parseInt(el.value)||0:0;}
+
+function getIssueCounts(){
+  const counts={};
+  let totRep=0,totDif=0;
+  CRIT_ORDER.forEach(c=>{
+    const rep=num('rep-'+c), dif=num('dif-'+c);
+    counts[c]={rep:rep,dif:dif};
+    totRep+=rep;totDif+=dif;
+  });
+  return {counts:counts,totRep:totRep,totDif:totDif};
+}
+
+function estadoChipHTML(){
+  return '<span style="display:inline-block;background:'+ESTADO_COLORS[estado]+';color:#ffffff;font-size:13px;font-weight:bold;padding:4px 12px;border-radius:16px;text-transform:uppercase;">'+estado+'</span>';
+}
+
+function critBreakdownHTML(){
+  const r=getIssueCounts();
+  if(!r.totRep) return '';
+  let rows='';
+  CRIT_ORDER.forEach(c=>{
+    if(r.counts[c].rep){
+      const difTxt=r.counts[c].dif?' ('+r.counts[c].dif+' diferido'+(r.counts[c].dif!==1?'s':'')+')':'';
+      rows+='<tr>'+
+        '<td style="padding:4px 10px 4px 0;vertical-align:middle">'+
+          '<span style="display:inline-block;background:'+CRIT_COLORS[c]+';color:#ffffff;font-size:12px;font-weight:bold;padding:2px 8px;border-radius:4px">'+c+'</span>'+
+        '</td>'+
+        '<td style="padding:4px 0;font-size:14px;color:#202124;vertical-align:middle">'+r.counts[c].rep+' '+(r.counts[c].rep===1?'issue':'issues')+difTxt+'</td>'+
+      '</tr>';
+    }
+  });
+  return '<p style="margin: 0 0 8px 0;"><strong>Detalle de issues por criticidad:</strong></p><table style="border-collapse:collapse;margin-bottom:16px;width:100%;max-width:400px;">'+rows+'</table>';
+}
+
+function drawChartSync(){
+  const aprob=num('aprob'),obs=num('obs'),fallo=num('fallo');
+  const total=aprob+obs+fallo;
+  const canvas=document.getElementById('chart-offscreen');
+  const ctx=canvas.getContext('2d');
+  if(chartInst){chartInst.destroy();}
+  chartInst=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['Aprobados','Aprob. c/obs.','Fallidos'],
+      datasets:[{data:[aprob,obs,fallo],backgroundColor:['#4CAF7D','#EF9F27','#E24B4A'],borderWidth:0}]
+    },
+    options:{
+      responsive:false,
+      animation:false,
+      cutout:'68%',
+      plugins:{
+        legend:{position:'bottom',labels:{font:{size:16},boxWidth:16,padding:20,color:'#444'}},
+        tooltip:{enabled:false}
+      }
+    },
+    plugins:[{id:'center',afterDraw(chart){
+      const w=chart.width,h=chart.height,c=chart.ctx;c.save();
+      c.font='bold 52px sans-serif';c.fillStyle='#222';
+      c.textAlign='center';c.textBaseline='middle';
+      c.fillText(total,w/2,h/2-16);
+      c.font='18px sans-serif';c.fillStyle='#888';
+      c.fillText('Total',w/2,h/2+28);
+      c.restore();
+    }}]
+  });
+  chartInst.update('none');
+  ctx.save();
+  ctx.globalCompositeOperation='destination-over';
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.restore();
+  return canvas.toDataURL('image/png');
+}
+
+function buildEmailHTML(chartDataUrl){
+  // 1. Declarar estilos inline obligatorios para Gmail
+  const pStyle = 'style="margin: 0 0 12px 0;"';
+  const ulStyle = 'style="margin: 0 0 16px 0; padding-left: 24px;"';
+  const liStyle = 'style="margin-bottom: 4px;"';
+
+  const vertical=val('vertical')||'[Vertical de desarrollo]';
+  const hupId=val('hup-id')||'HUP-XXXX';
+  const hupName=val('hup-name')||'[Nombre de la HUP]';
+  
+  // Usamos el formatUrl para que Gmail garantice el click en el enlace
+  const hupUrl = formatUrl(val('hup-url'));
+  const planUrl = formatUrl(val('plan-url'));
+  const defectUrl = formatUrl(val('defect-url'));
+  
+  const ciclo=num('ciclo-num')||1;
+  const aprob=num('aprob'),obs=num('obs'),fallo=num('fallo');
+  const totalEjec=aprob+obs+fallo;
+  const totalAprob=aprob+obs;
+  const r=getIssueCounts();
+  const rechazado=estado==='Rechazado';
+
+  const hupLink='<a href="'+hupUrl+'" target="_blank" rel="noopener" style="color:#1a73e8; font-weight:bold;">'+hupId+'</a> '+hupName;
+
+  const resumen='<p '+pStyle+'><strong>Resumen de la certificación:</strong></p>'+
+'<ul '+ulStyle+'>'+
+'<li '+liStyle+'>Vertical de desarrollo: '+vertical+'</li>'+
+'<li '+liStyle+'>Ciclo de pruebas: '+ordinal(ciclo)+'</li>'+
+'<li '+liStyle+'>Total de casos ejecutados: '+totalEjec+'</li>'+
+'<li '+liStyle+'>Casos aprobados: '+totalAprob+'</li>'+
+'<li '+liStyle+'>Casos fallidos: '+fallo+'</li>'+
+'<li '+liStyle+'>Total de issues reportados: '+r.totRep+'</li>'+
+'<li '+liStyle+'>Total de issues diferidos: '+r.totDif+'</li>'+
+'</ul>';
+
+  const chartImg=chartDataUrl
+    ? '<p style="text-align:center; margin: 0 0 16px 0;"><img src="'+chartDataUrl+'" width="'+CHART_SIZE+'" height="'+CHART_SIZE+'" style="width:'+CHART_SIZE+'px; height:'+CHART_SIZE+'px; display:inline-block; border:none; outline:none; margin:0 auto;" alt="Gráfico de certificación"></p>'
+    : '<p '+pStyle+' style="color:#aaa;font-size:12px">[Gráfico cargando...]</p>';
+
+  const resultado=rechazado
+    ? '<p '+pStyle+'><strong>Resultado QA:</strong><br>La funcionalidad no cumple completamente con los criterios de aceptación definidos, debido a la presencia de defectos que impactan la continuidad de la certificación y/o la experiencia esperada del usuario.</p>'
+    : '<p '+pStyle+'><strong>Resultado QA:</strong><br>La funcionalidad cumple con los criterios de aceptación definidos y no presenta defectos bloqueantes, críticos o de alto impacto que impidan su continuidad hacia la siguiente etapa del flujo de entrega.</p>';
+
+  let motivoBlock='';
+  if(rechazado){
+    const motivos=val('motivo').split('\n').map(m=>m.trim()).filter(Boolean);
+    const bullets=motivos.length?motivos.map(m=>'<li '+liStyle+'>'+m+'</li>').join(''):'<li '+liStyle+'>[Descripción breve del principal motivo]</li>';
+    motivoBlock='<p '+pStyle+'><strong>Motivo del rechazo:</strong></p><ul '+ulStyle+'>'+bullets+'</ul>'+
+'<p '+pStyle+'><strong>Acción requerida:</strong><br>Se solicita la revisión y corrección de los defectos informados para continuar con un nuevo ciclo de validación QA una vez que los ajustes se encuentren disponibles en ambiente de pruebas.</p>';
+  }
+
+  const intro=rechazado
+    ? 'Junto con saludar, informo la finalización del ciclo de certificación QA correspondiente a la(s) siguiente(s) historia(s) de usuario:'
+    : 'Junto con saludar, informo la finalización del ciclo de certificación QA correspondiente a la siguiente historia de usuario:';
+
+  const estadoLine='Luego de ejecutar el plan de pruebas definido, se informa que la certificación QA finalizó en estado '+estadoChipHTML()+'.';
+
+  const showDefects = num('fallo') > 0 || r.totRep > 0;
+
+  let evidencia='<p '+pStyle+'><strong>Evidencia y detalle:</strong></p>'+
+'<ul '+ulStyle+'>'+
+'<li '+liStyle+'>Plan de pruebas: <a href="'+planUrl+'" target="_blank" rel="noopener" style="color:#1a73e8;">Abrir documento</a></li>';
+
+  if (showDefects) {
+    evidencia += '<li '+liStyle+'>Detalle de defectos: <a href="'+defectUrl+'" target="_blank" rel="noopener" style="color:#1a73e8;">Abrir documento</a></li>';
+  }
+
+  evidencia += '</ul>';
+
+  // 2. Envolvemos todo el contenido en un contenedor maestro (forzando fuentes y colores)
+  const wrapperStart = '<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #202124;">';
+  const wrapperEnd = '</div>';
+
+  return wrapperStart +
+'<p '+pStyle+'>'+getGreeting()+',</p>'+
+'<p '+pStyle+'>'+intro+'</p>'+
+'<p '+pStyle+'>'+hupLink+'</p>'+
+'<p '+pStyle+'>'+estadoLine+'</p>'+
+resumen+
+chartImg+
+critBreakdownHTML()+
+resultado+
+motivoBlock+
+evidencia+
+wrapperEnd;
+}
+
+function getSubject(){
+  const vertical=val('vertical')||'[Vertical]';
+  const hupId=val('hup-id')||'HUP-XXXX';
+  return 'QA '+vertical+' - '+hupId+' - Certificación de calidad: '+estado;
+}
+
+function showCopied(){
+  document.querySelectorAll('.gen-btn,.copy-btn').forEach(b=>{
+    const o=b.textContent;b.textContent='¡Copiado!';setTimeout(()=>{b.textContent=o;},2000);
+  });
+}
+
+// Nuevo método de copiado usando selección nativa (garantiza el funcionamiento en Gmail)
+function copyRich(){
+  const dataUrl=lastChartDataUrl||drawChartSync();
+  const html=buildEmailHTML(dataUrl);
+
+  // 1. Crear un elemento temporal escondido
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = html;
+  
+  // Ocultarlo pero manteniéndolo en el flujo (display: none bloquea la selección)
+  tempDiv.style.all = 'initial'; // Purga estilos externos si es que los hay
+  tempDiv.style.position = 'fixed';
+  tempDiv.style.left = '-9999px';
+  tempDiv.style.top = '-9999px';
+  
+  tempDiv.style.backgroundColor = '#ffffff';
+  tempDiv.style.color = '#202124';
+
+  document.body.appendChild(tempDiv);
+
+  // 2. Seleccionar el contenido
+  const selection = window.getSelection();
+  const range = document.createRange();
+  
+  // Deseleccionar cualquier cosa previa
+  selection.removeAllRanges();
+  
+  range.selectNodeContents(tempDiv);
+  selection.addRange(range);
+
+  // 3. Ejecutar el copiado
+  try {
+    const exitoso = document.execCommand('copy');
+    if (exitoso) {
+      showCopied();
+    } else {
+      // Fallback
+      throw new Error('execCommand falló');
+    }
+  } catch(e) {
+    console.error("Error al copiar: ", e);
+    alert("Hubo un problema al copiar. Intenta copiarlo manualmente desde la vista previa.");
+  } finally {
+    // 4. Limpieza del DOM
+    selection.removeAllRanges();
+    document.body.removeChild(tempDiv);
+  }
+}
+
+function live(){
+  document.getElementById('total-lbl').textContent=num('aprob')+num('obs')+num('fallo');
+  const r=getIssueCounts();
+  document.getElementById('tot-rep').textContent=r.totRep;
+  document.getElementById('tot-dif').textContent=r.totDif;
+  
+  const showDefects = num('fallo') > 0 || r.totRep > 0;
+  document.getElementById('defect-block').style.display = showDefects ? 'block' : 'none';
+
+  lastChartDataUrl=drawChartSync();
+  document.getElementById('preview').innerHTML=buildEmailHTML(lastChartDataUrl);
+  document.getElementById('preview-subject').textContent='Asunto: '+getSubject();
+}
+
+renderIssueTable();
+setEstado('Aprobado');
+live();
+</script>
+</body>
+</html>
